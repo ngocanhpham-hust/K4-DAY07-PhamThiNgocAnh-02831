@@ -1,8 +1,8 @@
 # Báo Cáo Cá Nhân — Lab 7: Embedding & Vector Store
 
-**Họ tên:** [Tên sinh viên]
-**Nhóm:** [Tên nhóm]
-**Ngày:** [Ngày nộp]
+**Họ tên:** Phạm Thị Ngọc Anh
+**Nhóm:** G16
+**Ngày:** 20/09/2026
 
 > **Nộp 1 bản / sinh viên.** Phần nhóm (lựa chọn tài liệu, thiết kế chiến lược, bộ câu hỏi đánh giá, demo) nộp chung 1 bản trong `REPORT_NHOM.md`. Chi tiết thang điểm: `docs/SCORING.md`.
 
@@ -15,56 +15,66 @@
 ### Độ tương tự Cosine (Cosine Similarity) (Bài tập 1.1)
 
 **Độ tương tự cosine cao (High cosine similarity) nghĩa là gì?**
-> *Viết 1-2 câu:*
+
+Độ tương tự cosine cao nghĩa là hai vector gần cùng hướng, nên hai đoạn văn thường có nội dung hoặc ý nghĩa gần nhau. Giá trị càng gần 1 thì mức tương đồng càng cao; gần 0 là ít liên quan và gần -1 là ngược hướng.
 
 **Ví dụ có độ tương tự CAO:**
-- Câu A:
-- Câu B:
-- Tại sao tương đồng:
+
+- Câu A: “Shopee hoàn tiền về thẻ tín dụng trong 7 đến 14 ngày làm việc.”
+- Câu B: “Tiền hoàn vào thẻ tín dụng Shopee mất từ 7 đến 14 ngày làm việc.”
+- Tại sao tương đồng: Hai câu dùng cách diễn đạt khác nhau nhưng cùng nói về một phương thức và thời gian hoàn tiền.
 
 **Ví dụ có độ tương tự THẤP:**
-- Câu A:
-- Câu B:
-- Tại sao khác:
+
+- Câu A: “Khách hàng có thể gửi tranh chấp sau bán hàng.”
+- Câu B: “Python là một ngôn ngữ lập trình.”
+- Tại sao khác: Một câu thuộc chính sách thương mại điện tử, câu còn lại thuộc lĩnh vực lập trình và không có chung ý nghĩa.
 
 **Tại sao độ tương tự cosine (cosine similarity) được ưu tiên hơn khoảng cách Euclid (Euclidean distance) cho text embeddings?**
-> *Viết 1-2 câu:*
+
+Cosine tập trung vào hướng của vector thay vì độ lớn tuyệt đối, nên phù hợp hơn khi cần so sánh ý nghĩa của văn bản có độ dài khác nhau. Với embedding đã chuẩn hóa, điểm cosine dễ diễn giải và dùng để xếp hạng kết quả.
 
 ### Bài toán tính toán Chunking (Bài tập 1.2)
 
 **Tài liệu 10,000 ký tự, chunk_size=500, overlap=50. Bao nhiêu chunks?**
-> *Trình bày phép tính:*
-> *Đáp án:*
+
+Mỗi chunk mới tiến thêm `500 - 50 = 450` ký tự. Số chunk được tính bằng `ceil((10,000 - 500) / 450) + 1 = 23`.
+
+**Đáp án: 23 chunks.**
 
 **Nếu độ chồng chéo (overlap) tăng lên 100, số lượng chunk thay đổi thế nào? Tại sao muốn độ chồng chéo nhiều hơn?**
-> *Viết 1-2 câu:*
+
+Khi overlap tăng lên 100, bước nhảy còn 400 ký tự và số chunk tăng thành `ceil((10,000 - 500) / 400) + 1 = 25`. Overlap lớn hơn giúp giữ thông tin nằm sát ranh giới giữa hai chunk, nhưng đổi lại sẽ tốn thêm dung lượng lưu trữ và chi phí embedding.
 
 ---
 
 ## 2. Hướng tiếp cận của tôi (My Approach) — Cá nhân (10 điểm)
 
-Giải thích cách tiếp cận của bạn khi lập trình (implement) các phần chính trong gói `src`.
-
 ### Các hàm chia nhỏ (Chunking Functions)
 
-**`SentenceChunker.chunk`** — hướng tiếp cận:
-> *Viết 2-3 câu: dùng biểu thức chính quy (regex) gì để phát hiện câu? Xử lý trường hợp ngoại lệ (edge case) nào?*
+**`SentenceChunker.chunk`**:
 
-**`RecursiveChunker.chunk` / `_split`** — hướng tiếp cận:
-> *Viết 2-3 câu: thuật toán hoạt động thế nào? Base case (trường hợp cơ sở) là gì?*
+Mình dùng regex `(?<=[.!?])\s+|\n` để tách sau dấu chấm, chấm than, chấm hỏi hoặc khi xuống dòng. Sau đó mình bỏ các phần rỗng, loại khoảng trắng thừa và gom tối đa `max_sentences_per_chunk` câu. Giá trị số câu tối đa được chặn dưới ở 1, còn văn bản rỗng trả về danh sách rỗng.
+
+**`RecursiveChunker.chunk` / `_split`**
+
+Mình thử lần lượt các dấu phân cách theo mức ưu tiên: đoạn văn, xuống dòng, dấu chấm, khoảng trắng, rồi mới cắt theo ký tự. Nếu một phần vẫn dài hơn `chunk_size`, hàm gọi đệ quy với dấu phân cách tiếp theo. Base case là văn bản đã đủ ngắn, hết separator, hoặc separator rỗng; riêng trường hợp `""` được cắt trực tiếp theo `chunk_size` để tránh lỗi `split("")` của Python.
 
 ### Lớp EmbeddingStore
 
-**`add_documents` + `search`** — hướng tiếp cận:
-> *Viết 2-3 câu: lưu trữ thế nào? Tính độ tương tự ra sao?*
+**`add_documents` + `search`**:
 
-**`search_with_filter` + `delete_document`** — hướng tiếp cận:
-> *Viết 2-3 câu: lọc (filter) trước hay sau? Xóa bằng cách nào?*
+Mỗi `Document` được chuyển thành record gồm id, nội dung, metadata và embedding. Store thử đồng bộ sang ChromaDB nếu thư viện có sẵn, đồng thời giữ bản trong bộ nhớ để vẫn chạy ổn định khi ChromaDB không khả dụng. Khi tìm kiếm, mình tạo embedding cho câu hỏi, tính dot product với từng record rồi sắp xếp điểm giảm dần; với vector đã chuẩn hóa thì dot product tương đương cosine similarity.
+
+**`search_with_filter` + `delete_document`**:
+
+`search_with_filter` lọc record theo tất cả cặp key-value trong metadata trước rồi mới tính điểm, nhờ vậy không xếp hạng các tài liệu ngoài phạm vi. `delete_document` xóa toàn bộ chunk có cùng `metadata["doc_id"]`, đồng bộ thao tác xóa sang ChromaDB nếu đang sử dụng và trả về `True` khi thực sự có dữ liệu bị xóa.
 
 ### Tác tử KnowledgeBaseAgent
 
-**`answer`** — hướng tiếp cận:
-> *Viết 2-3 câu: cấu trúc prompt? Cách đưa ngữ cảnh (inject context) vào thế nào?*
+**`answer`**:
+
+Agent gọi `store.search(question, top_k)` rồi đánh số các chunk lấy được và ghép chúng vào phần `Context`. Prompt yêu cầu mô hình chỉ trả lời dựa trên ngữ cảnh, đồng thời nói rõ là không đủ thông tin nếu các chunk không chứa câu trả lời. Câu hỏi được đặt sau context và toàn bộ prompt được truyền qua `llm_fn`, nên có thể thay LLM thật hoặc hàm giả lập khi kiểm thử.
 
 ---
 
@@ -74,11 +84,61 @@ Vượt qua bộ kiểm thử là điều kiện tính điểm phần này.
 
 ### Kết Quả Kiểm Thử (Test Results)
 
-```
-# Dán kết quả (output) của: pytest tests/ -v
+```text
+=============================== test session starts ================================
+platform darwin -- Python 3.11.14, pytest-9.0.2, pluggy-1.6.0 -- /opt/homebrew/opt/python@3.11/bin/python3.11
+cachedir: .pytest_cache
+rootdir: /Users/ngocanh/K4-DAY07-PhamThiNgocAnh-02831
+plugins: anyio-4.15.1, cov-7.0.0
+collected 42 items
+
+tests/test_solution.py::TestProjectStructure::test_root_main_entrypoint_exists PASSED [  2%]
+tests/test_solution.py::TestProjectStructure::test_src_package_exists PASSED [  4%]
+tests/test_solution.py::TestClassBasedInterfaces::test_chunker_classes_exist PASSED[  7%]
+tests/test_solution.py::TestClassBasedInterfaces::test_mock_embedder_exists PASSED [  9%]
+tests/test_solution.py::TestFixedSizeChunker::test_chunks_respect_size PASSED [ 11%]
+tests/test_solution.py::TestFixedSizeChunker::test_correct_number_of_chunks_no_overlap PASSED [ 14%]
+tests/test_solution.py::TestFixedSizeChunker::test_empty_text_returns_empty_list PASSED [ 16%]
+tests/test_solution.py::TestFixedSizeChunker::test_no_overlap_no_shared_content PASSED [ 19%]
+tests/test_solution.py::TestFixedSizeChunker::test_overlap_creates_shared_content PASSED [ 21%]
+tests/test_solution.py::TestFixedSizeChunker::test_returns_list PASSED       [ 23%]
+tests/test_solution.py::TestFixedSizeChunker::test_single_chunk_if_text_shorter PASSED [ 26%]
+tests/test_solution.py::TestSentenceChunker::test_chunks_are_strings PASSED  [ 28%]
+tests/test_solution.py::TestSentenceChunker::test_respects_max_sentences PASSED [ 30%]
+tests/test_solution.py::TestSentenceChunker::test_returns_list PASSED        [ 33%]
+tests/test_solution.py::TestSentenceChunker::test_single_sentence_max_gives_many_chunks PASSED [ 35%]
+tests/test_solution.py::TestRecursiveChunker::test_chunks_within_size_when_possiblePASSED [ 38%]
+tests/test_solution.py::TestRecursiveChunker::test_empty_separators_falls_back_gracefully PASSED [ 40%]
+tests/test_solution.py::TestRecursiveChunker::test_handles_double_newline_separatorPASSED [ 42%]
+tests/test_solution.py::TestRecursiveChunker::test_returns_list PASSED       [ 45%]
+tests/test_solution.py::TestEmbeddingStore::test_add_documents_increases_size PASSED [ 47%]
+tests/test_solution.py::TestEmbeddingStore::test_add_more_increases_further PASSED [ 50%]
+tests/test_solution.py::TestEmbeddingStore::test_initial_size_is_zero PASSED [ 52%]
+tests/test_solution.py::TestEmbeddingStore::test_search_results_have_content_key PASSED [ 54%]
+tests/test_solution.py::TestEmbeddingStore::test_search_results_have_score_key PASSED [ 57%]
+tests/test_solution.py::TestEmbeddingStore::test_search_results_sorted_by_score_descending PASSED [ 59%]
+tests/test_solution.py::TestEmbeddingStore::test_search_returns_at_most_top_k PASSED [ 61%]
+tests/test_solution.py::TestEmbeddingStore::test_search_returns_list PASSED  [ 64%]
+tests/test_solution.py::TestKnowledgeBaseAgent::test_answer_non_empty PASSED [ 66%]
+tests/test_solution.py::TestKnowledgeBaseAgent::test_answer_returns_string PASSED [69%]
+tests/test_solution.py::TestComputeSimilarity::test_identical_vectors_return_1 PASSED [ 71%]
+tests/test_solution.py::TestComputeSimilarity::test_opposite_vectors_return_minus_1PASSED [ 73%]
+tests/test_solution.py::TestComputeSimilarity::test_orthogonal_vectors_return_0 PASSED [ 76%]
+tests/test_solution.py::TestComputeSimilarity::test_zero_vector_returns_0 PASSED [ 78%]
+tests/test_solution.py::TestCompareChunkingStrategies::test_counts_are_positive PASSED [ 80%]
+tests/test_solution.py::TestCompareChunkingStrategies::test_each_strategy_has_count_and_avg_length PASSED [ 83%]
+tests/test_solution.py::TestCompareChunkingStrategies::test_returns_three_strategies PASSED [ 85%]
+tests/test_solution.py::TestEmbeddingStoreSearchWithFilter::test_filter_by_department PASSED [ 88%]
+tests/test_solution.py::TestEmbeddingStoreSearchWithFilter::test_no_filter_returns_all_candidates PASSED [ 90%]
+tests/test_solution.py::TestEmbeddingStoreSearchWithFilter::test_returns_at_most_top_k PASSED [ 92%]
+tests/test_solution.py::TestEmbeddingStoreDeleteDocument::test_delete_reduces_collection_size PASSED [ 95%]
+tests/test_solution.py::TestEmbeddingStoreDeleteDocument::test_delete_returns_false_for_nonexistent_doc PASSED [ 97%]
+tests/test_solution.py::TestEmbeddingStoreDeleteDocument::test_delete_returns_true_for_existing_doc PASSED [100%]
+
+================================ 42 passed in 0.04s ================================
 ```
 
-**Số lượng bài test vượt qua (pass):** __ / 42
+**Số lượng bài test vượt qua (pass):** 42 / 42
 
 ---
 
@@ -86,14 +146,17 @@ Vượt qua bộ kiểm thử là điều kiện tính điểm phần này.
 
 | Cặp | Câu A | Câu B | Dự đoán | Điểm thực tế | Đúng? |
 |------|-----------|-----------|---------|--------------|-------|
-| 1 | | | cao / thấp | | |
-| 2 | | | cao / thấp | | |
-| 3 | | | cao / thấp | | |
-| 4 | | | cao / thấp | | |
-| 5 | | | cao / thấp | | |
+| 1 | Shopee hoàn tiền về thẻ tín dụng trong 7 đến 14 ngày làm việc. | Tiền hoàn vào thẻ tín dụng Shopee mất từ 7 đến 14 ngày làm việc. | Cao | 0.037790 | Không |
+| 2 | Người bán chịu phí trả hàng nếu lỗi thuộc về người bán. | Khi người bán giao sai sản phẩm, phí hoàn hàng do người bán thanh toán. | Cao | 0.162364 | Không |
+| 3 | TikTok Shop khuyến nghị tỷ lệ trả hàng do lỗi người bán dưới 1,5%. | Mục tiêu của người bán là giữ tỷ lệ hoàn trả do lỗi của mình thấp hơn 1,5%. | Cao | 0.032124 | Không |
+| 4 | Shopee xử lý yêu cầu trả hàng và hoàn tiền. | Hôm nay thời tiết ở Hà Nội có mưa. | Thấp | 0.068052 | Có |
+| 5 | Khách hàng có thể gửi tranh chấp sau bán hàng. | Python là một ngôn ngữ lập trình bậc cao. | Thấp | 0.019137 | Có |
+
+Các điểm trên được đo bằng `MockEmbedder` 64 chiều của dự án; mình quy ước điểm từ 0.5 trở lên là cao cho phần đối chiếu này.
 
 **Kết quả nào bất ngờ nhất? Điều này nói gì về cách embeddings biểu diễn ý nghĩa?**
-> *Viết 2-3 câu:*
+
+Ba cặp đầu có nghĩa gần như giống nhau nhưng điểm lại rất thấp. Lý do là `MockEmbedder` sinh vector từ mã băm của toàn bộ chuỗi nên chỉ bảo đảm tính lặp lại cho kiểm thử, chứ không học quan hệ ngữ nghĩa giữa các từ. Điều này cho thấy muốn đánh giá retrieval thật sự thì cần một mô hình embedding ngữ nghĩa; mock embedding chỉ phù hợp để kiểm tra luồng chương trình.
 
 ---
 
@@ -101,18 +164,23 @@ Vượt qua bộ kiểm thử là điều kiện tính điểm phần này.
 
 Chạy **5 câu hỏi đánh giá của nhóm** trên mã nguồn cá nhân của bạn trong gói `src`. **5 câu hỏi này phải trùng với các thành viên cùng nhóm** (xem `REPORT_NHOM.md`).
 
+Mình dùng 6 file trong `data/ecommerce-policies/`, giữ mỗi file như một document/chunk theo đúng luồng demo hiện tại trong `main.py`, backend `_mock_embed` và `top_k=3`. Vì `REPORT_NHOM.md` chưa có bộ câu hỏi chung, đây là 5 câu mình đã dùng; nhóm cần giữ nguyên các câu này khi tổng hợp báo cáo nhóm để kết quả có thể so sánh công bằng.
+
 | # | Câu hỏi (Query) | Top-1 Chunk truy xuất được (tóm tắt) | Điểm Score | Có liên quan không? (Relevant) | Câu trả lời của Agent (tóm tắt) |
 |---|-------|--------------------------------|-------|-----------|------------------------|
-| 1 | | | | | |
-| 2 | | | | | |
-| 3 | | | | | |
-| 4 | | | | | |
-| 5 | | | | | |
+| 1 | Shopee cho phép người mua gửi yêu cầu trả hàng/hoàn tiền trong bao lâu sau khi giao hàng thành công? | `shopee-return-refund-policy`: điều kiện và thời hạn yêu cầu trả hàng | 0.128508 | Có | Thông thường là 15 ngày; thực phẩm tươi sống và đông lạnh là 24 giờ. |
+| 2 | Shopee hoàn tiền về thẻ tín dụng hoặc thẻ ghi nợ trong bao lâu? | `shopee-buyer-return-request`: hướng dẫn gửi yêu cầu, chưa nêu thời gian theo thẻ | 0.120277 | Không ở top-1; tài liệu đúng ở top-3 | Thời gian hoàn về thẻ tín dụng/ghi nợ là 7–14 ngày làm việc, tùy ngân hàng. |
+| 3 | TikTok Shop khuyến nghị người bán duy trì tỷ lệ trả hàng/hoàn tiền do lỗi người bán dưới mức nào? | `tiktok-seller-fault-return-rate`: định nghĩa và mục tiêu của chỉ số | 0.186245 | Có | TikTok Shop khuyến nghị giữ tỷ lệ này dưới 1,5%. |
+| 4 | Khách hàng có bao nhiêu ngày để tranh chấp khi TikTok Shop từ chối yêu cầu trả hàng? | `shopee-buyer-refund-time`: thời gian hoàn tiền của Shopee, sai nền tảng | 0.276426 | Không | Context top-3 không chứa đúng mốc thời gian nên agent cần trả lời là chưa đủ thông tin. Đáp án chuẩn là 7 ngày theo lịch. |
+| 5 | Ai chịu phí trả hàng trên TikTok Shop nếu việc trả hàng do lỗi người bán? | `tiktok-return-refund-policy`: phần phân bổ phí vận chuyển trả hàng | 0.105907 | Có | Người bán chịu phí trả hàng khi nguyên nhân được xác định là lỗi của người bán. |
 
-**Bao nhiêu câu hỏi trả về chunk có liên quan trong top-3?** __ / 5
+**Bao nhiêu câu hỏi trả về chunk có liên quan trong top-3? 4 / 5**
+
+Theo cách chấm trong `docs/SCORING.md`, mình tự chấm phần này 7/10: câu 1, 3 và 5 đạt 2 điểm; câu 2 đạt 1 điểm vì tài liệu đúng chỉ nằm ở top-3; câu 4 không tìm thấy tài liệu chứa đáp án trong top-3.
 
 **Điều hay nhất tôi học được từ thành viên khác / nhóm khác (qua demo):**
-> *Viết 2-3 câu:*
+
+Điều mình thấy rõ nhất khi đối chiếu các cách làm là chunking và metadata phải được thiết kế cùng nhau. Chunk nhỏ giúp kết quả tập trung hơn, nhưng nếu cắt mất câu trước hoặc tiêu đề thì nội dung lại khó hiểu; ngược lại, metadata như `platform`, `category` và `audience` có thể loại bỏ tài liệu sai nền tảng trước khi xếp hạng. Nếu làm vòng tiếp theo, mình sẽ dùng semantic embedding đa ngôn ngữ và so sánh riêng kết quả có/không có metadata filter.
 
 ---
 
@@ -120,9 +188,9 @@ Chạy **5 câu hỏi đánh giá của nhóm** trên mã nguồn cá nhân củ
 
 | Tiêu chí | Điểm tự đánh giá |
 |----------|-------------------|
-| Khởi động (Warm-up) | / 5 |
-| Hướng tiếp cận của tôi (My Approach) | / 10 |
-| Hoàn thiện code (Core Implementation — tests) | / 30 |
-| Dự đoán độ tương tự (Similarity Predictions) | / 5 |
-| Kết quả truy xuất của tôi (Competition Results) | / 10 |
-| **Tổng phần cá nhân** | **/ 60** |
+| Khởi động (Warm-up) | 5 / 5 |
+| Hướng tiếp cận của tôi (My Approach) | 10 / 10 |
+| Hoàn thiện code (Core Implementation — tests) | 30 / 30 |
+| Dự đoán độ tương tự (Similarity Predictions) | 5 / 5 |
+| Kết quả truy xuất của tôi (Competition Results) | 7 / 10 |
+| **Tổng phần cá nhân** | **57 / 60** |
