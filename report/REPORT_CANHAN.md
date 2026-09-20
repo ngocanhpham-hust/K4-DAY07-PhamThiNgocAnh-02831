@@ -60,6 +60,10 @@ Mình dùng regex `(?<=[.!?])\s+|\n` để tách sau dấu chấm, chấm than, 
 
 Mình thử lần lượt các dấu phân cách theo mức ưu tiên: đoạn văn, xuống dòng, dấu chấm, khoảng trắng, rồi mới cắt theo ký tự. Nếu một phần vẫn dài hơn `chunk_size`, hàm gọi đệ quy với dấu phân cách tiếp theo. Base case là văn bản đã đủ ngắn, hết separator, hoặc separator rỗng; riêng trường hợp `""` được cắt trực tiếp theo `chunk_size` để tránh lỗi `split("")` của Python.
 
+**`HeadingChunker.chunk`** — chiến lược benchmark của mình:
+
+Mình tách tài liệu trước mỗi heading Markdown và giữ cả chuỗi heading cha–con trong chunk. Nếu một section vượt quá 800 ký tự, phần thân được chia tiếp bằng `RecursiveChunker`, sau đó tiêu đề được gắn lại vào từng mảnh con. Nhờ vậy, chunk thứ hai trở đi vẫn cho biết nó đang thuộc điều khoản nào.
+
 ### Lớp EmbeddingStore
 
 **`add_documents` + `search`**:
@@ -164,19 +168,21 @@ Ba cặp đầu có nghĩa gần như giống nhau nhưng điểm lại rất th
 
 Chạy **5 câu hỏi đánh giá của nhóm** trên mã nguồn cá nhân của bạn trong gói `src`. **5 câu hỏi này phải trùng với các thành viên cùng nhóm** (xem `REPORT_NHOM.md`).
 
-Mình dùng 6 file trong `data/ecommerce-policies/`, giữ mỗi file như một document/chunk theo đúng luồng demo hiện tại trong `main.py`, backend `_mock_embed` và `top_k=3`. Vì `REPORT_NHOM.md` chưa có bộ câu hỏi chung, đây là 5 câu mình đã dùng; nhóm cần giữ nguyên các câu này khi tổng hợp báo cáo nhóm để kết quả có thể so sánh công bằng.
+Mình dùng 8 file trong `data/ecommerce-policies/`, tách frontmatter khỏi nội dung rồi chia phần thân bằng `HeadingChunker(chunk_size=800)`. Section dài được hạ xuống `RecursiveChunker`, nhưng heading vẫn được gắn lại vào từng mảnh con. Tổng cộng có 85 chunk; backend là `_mock_embed` và mỗi câu lấy `top_k=3`. Đây cũng là đúng 5 câu benchmark chung đã ghi trong `REPORT_NHOM.md`.
 
 | # | Câu hỏi (Query) | Top-1 Chunk truy xuất được (tóm tắt) | Điểm Score | Có liên quan không? (Relevant) | Câu trả lời của Agent (tóm tắt) |
 |---|-------|--------------------------------|-------|-----------|------------------------|
-| 1 | Shopee cho phép người mua gửi yêu cầu trả hàng/hoàn tiền trong bao lâu sau khi giao hàng thành công? | `shopee-return-refund-policy`: điều kiện và thời hạn yêu cầu trả hàng | 0.128508 | Có | Thông thường là 15 ngày; thực phẩm tươi sống và đông lạnh là 24 giờ. |
-| 2 | Shopee hoàn tiền về thẻ tín dụng hoặc thẻ ghi nợ trong bao lâu? | `shopee-buyer-return-request`: hướng dẫn gửi yêu cầu, chưa nêu thời gian theo thẻ | 0.120277 | Không ở top-1; tài liệu đúng ở top-3 | Thời gian hoàn về thẻ tín dụng/ghi nợ là 7–14 ngày làm việc, tùy ngân hàng. |
-| 3 | TikTok Shop khuyến nghị người bán duy trì tỷ lệ trả hàng/hoàn tiền do lỗi người bán dưới mức nào? | `tiktok-seller-fault-return-rate`: định nghĩa và mục tiêu của chỉ số | 0.186245 | Có | TikTok Shop khuyến nghị giữ tỷ lệ này dưới 1,5%. |
-| 4 | Khách hàng có bao nhiêu ngày để tranh chấp khi TikTok Shop từ chối yêu cầu trả hàng? | `shopee-buyer-refund-time`: thời gian hoàn tiền của Shopee, sai nền tảng | 0.276426 | Không | Context top-3 không chứa đúng mốc thời gian nên agent cần trả lời là chưa đủ thông tin. Đáp án chuẩn là 7 ngày theo lịch. |
-| 5 | Ai chịu phí trả hàng trên TikTok Shop nếu việc trả hàng do lỗi người bán? | `tiktok-return-refund-policy`: phần phân bổ phí vận chuyển trả hàng | 0.105907 | Có | Người bán chịu phí trả hàng khi nguyên nhân được xác định là lỗi của người bán. |
+| 1 | Shopee hoàn tiền về thẻ tín dụng hoặc thẻ ghi nợ trong bao lâu? | `shopee-return-refund-policy#15`: nói về xử lý yêu cầu, không có mốc hoàn tiền theo thẻ | 0.250171 | Không | Không đủ ngữ cảnh để trả lời; gold answer là 7–14 ngày làm việc. |
+| 2 | Người mua Shopee được gửi yêu cầu trả hàng/hoàn tiền trong bao lâu sau khi giao hàng thành công, và thực phẩm tươi sống có ngoại lệ gì? | `shopee-return-refund-policy#19`: đúng tài liệu nhưng sai section | 0.321098 | Không ở mức nội dung | Top-3 không chứa đủ hai mốc 15 ngày và 24 giờ nên agent không nên suy đoán. |
+| 3 | Tôi có thể hủy đơn vào lúc nào và việc hủy đơn có hậu quả gì? | `shopee-buyer-return-request#0`; chunk gold `tiktok-buyer-order-cancellation#0` ở hạng 2 | 0.099288 | Có trong top-3 sau khi lọc `audience=buyer` | Người mua thường có thể hủy trước trạng thái đang vận chuyển; việc hủy không gây hậu quả cho người bán, trừ lý do “Giao hàng trễ”. |
+| 4 | Những trường hợp nào được tính và không được tính vào tỷ lệ trả hàng/hoàn tiền do lỗi người bán của TikTok Shop? | `tiktok-after-sale-dispute#10`: nói về phản đối tranh chấp, sai nội dung | 0.347998 | Không | Không đủ ngữ cảnh để liệt kê chính xác các trường hợp được tính và loại trừ. |
+| 5 | Trong tranh chấp sau bán hàng TikTok Shop, người bán có bao lâu để gửi tài liệu, nền tảng có bao lâu để ra quyết định và hai bên có bao lâu để phản đối? | `shopee-return-refund-policy#9`: sai nền tảng; gold doc có ở hạng 2/3 nhưng sai section | 0.293027 | Không ở mức nội dung | Context không chứa đủ ba mốc; gold answer lần lượt là 24 giờ, 72 giờ và 48 giờ. |
 
-**Bao nhiêu câu hỏi trả về chunk có liên quan trong top-3? 4 / 5**
+**Bao nhiêu câu hỏi trả về chunk có liên quan trong top-3? 1 / 5**
 
-Theo cách chấm trong `docs/SCORING.md`, mình tự chấm phần này 7/10: câu 1, 3 và 5 đạt 2 điểm; câu 2 đạt 1 điểm vì tài liệu đúng chỉ nằm ở top-3; câu 4 không tìm thấy tài liệu chứa đáp án trong top-3.
+Theo cách chấm ở mức nội dung trong `docs/SCORING.md`, mình tự chấm phần này 1/10: câu 3 có chunk chứa đáp án ở hạng 2 nên đạt 1 điểm; bốn câu còn lại không có đủ thông tin trả lời trong top-3. Nếu chỉ nhìn `doc_id`, câu 2 và 5 dễ bị chấm nhầm là đúng dù section truy xuất không chứa số liệu cần thiết.
+
+Ở câu 3, A/B cho kết quả khá rõ: không filter thì top-3 không chứa đủ dấu hiệu đáp án; dùng `metadata_filter={"audience": "buyer"}` thì chunk buyer chứa đáp án xuất hiện ở hạng 2. Kết quả tổng thể vẫn thấp vì `MockEmbedder` băm chuỗi chứ không hiểu ngữ nghĩa; do đó số liệu này chủ yếu giúp kiểm tra pipeline và phân tích lỗi, chưa phản ánh chất lượng của `HeadingChunker` khi dùng embedding thật.
 
 **Điều hay nhất tôi học được từ thành viên khác / nhóm khác (qua demo):**
 
@@ -192,5 +198,5 @@ Theo cách chấm trong `docs/SCORING.md`, mình tự chấm phần này 7/10: c
 | Hướng tiếp cận của tôi (My Approach) | 10 / 10 |
 | Hoàn thiện code (Core Implementation — tests) | 30 / 30 |
 | Dự đoán độ tương tự (Similarity Predictions) | 5 / 5 |
-| Kết quả truy xuất của tôi (Competition Results) | 7 / 10 |
-| **Tổng phần cá nhân** | **57 / 60** |
+| Kết quả truy xuất của tôi (Competition Results) | 1 / 10 |
+| **Tổng phần cá nhân** | **51 / 60** |

@@ -1,0 +1,89 @@
+=== E-commerce Policy Benchmark ===
+Data directory: data/ecommerce-policies
+Chunker: HeadingChunker (chunk_size=800)
+Embedding backend: mock embeddings fallback
+Loaded: 8 source files -> 85 chunks
+
+Q1: Shopee hoàn tiền về thẻ tín dụng hoặc thẻ ghi nợ trong bao lâu?
+Filter: None
+Gold doc: shopee-buyer-refund-time
+Gold answer: Từ 7 đến 14 ngày làm việc, tùy theo ngân hàng.
+  1. score=0.250171 doc_id=shopee-return-refund-policy chunk_id=shopee-return-refund-policy#15
+     # Chính sách trả hàng và hoàn tiền Shopee Khi nhận được yêu cầu trả hàng và/hoặc hoàn tiền từ phía Người Mua, Shopee sẽ xem xét và quyết định cho Người Mua được trả hàng/hoàn tiền,
+  2. score=0.241293 doc_id=tiktok-buyer-order-cancellation chunk_id=tiktok-buyer-order-cancellation#1
+     # Quy định hủy đơn dành cho người mua TikTok Shop ## Đơn thanh toán khi nhận hàng Đối với đơn hàng COD, khách hàng có thể mở và kiểm tra kiện hàng trước khi thanh toán. Khách hàng 
+  3. score=0.235927 doc_id=tiktok-return-refund-policy chunk_id=tiktok-return-refund-policy#5
+     # Chính sách hủy đơn trả hàng hoàn tiền TikTok Shop Nghi ngờ có bất kỳ hành vi gian lận nào Phát hiện vi phạm nguyên tắc hoàn tất đơn hàng của chúng tôi Đơn hàng được xác minh là k
+Gold doc in top-3: NO
+All answer markers in top-3: NO
+
+Q2: Người mua Shopee được gửi yêu cầu trả hàng/hoàn tiền trong bao lâu sau khi giao hàng thành công, và thực phẩm tươi sống có ngoại lệ gì?
+Filter: None
+Gold doc: shopee-return-refund-policy
+Gold answer: Thông thường là 15 ngày kể từ khi giao hàng thành công; riêng thực phẩm tươi sống và đông lạnh là 24 giờ.
+  1. score=0.321098 doc_id=shopee-return-refund-policy chunk_id=shopee-return-refund-policy#19
+     # Chính sách trả hàng và hoàn tiền Shopee đơn yêu cầu trả hàng/hoàn tiền một phần (Người Mua chỉ nhấn yêu cầu trả hàng/hoàn tiền cho một hoặc một số sản phẩm trong đơn hàng, không 
+  2. score=0.300965 doc_id=tiktok-return-refund-policy chunk_id=tiktok-return-refund-policy#6
+     # Chính sách hủy đơn trả hàng hoàn tiền TikTok Shop Vấn đề liên quan đến kho vận: Nếu nhà cung cấp dịch vụ kho vận thông báo cho nền tảng trong quá trình vận chuyển rằng đơn hàng b
+  3. score=0.258184 doc_id=tiktok-buyer-order-cancellation chunk_id=tiktok-buyer-order-cancellation#1
+     # Quy định hủy đơn dành cho người mua TikTok Shop ## Đơn thanh toán khi nhận hàng Đối với đơn hàng COD, khách hàng có thể mở và kiểm tra kiện hàng trước khi thanh toán. Khách hàng 
+Gold doc in top-3: YES
+All answer markers in top-3: NO
+
+Q3: Tôi có thể hủy đơn vào lúc nào và việc hủy đơn có hậu quả gì?
+Filter: {'audience': 'buyer'}
+Gold doc: tiktok-buyer-order-cancellation
+Gold answer: Người mua có thể hủy tùy trạng thái đơn; hầu hết đơn có thể hủy trước khi chuyển sang trạng thái đang vận chuyển. Việc hủy không gây hậu quả cho người bán, trừ khi chọn lý do Giao hàng trễ; một số trường hợp cần người bán phê duyệt hoặc có ngoại lệ.
+  1. score=0.099288 doc_id=shopee-buyer-return-request chunk_id=shopee-buyer-return-request#0
+     # Hướng dẫn người mua gửi yêu cầu trả hàng [Trả hàng/ Hoàn tiền] Hướng dẫn gửi yêu cầu Trả hàng/ Hoàn tiền | Shopee Trung tâm trợ giúp Xin chào, Shopee có thể giúp gì cho bạn? [Tr
+  2. score=0.076780 doc_id=tiktok-buyer-order-cancellation chunk_id=tiktok-buyer-order-cancellation#0
+     # Quy định hủy đơn dành cho người mua TikTok Shop ## Điều kiện hủy đơn Khách hàng có thể hủy đơn hàng tùy theo trạng thái đơn hàng. Điều này không gây ra hậu quả nào cho người bán,
+  3. score=0.061619 doc_id=shopee-buyer-refund-time chunk_id=shopee-buyer-refund-time#0
+     # Thời gian nhận tiền hoàn Shopee [Trả hàng/ Hoàn tiền] Thời gian nhận tiền hoàn và cách kiểm tra tiền hoàn | Shopee Trung tâm trợ giúp Xin chào, Shopee có thể giúp gì cho bạn? [Tr
+Gold doc in top-3: YES
+All answer markers in top-3: YES
+
+Q4: Những trường hợp nào được tính và không được tính vào tỷ lệ trả hàng/hoàn tiền do lỗi người bán của TikTok Shop?
+Filter: None
+Gold doc: tiktok-seller-fault-return-rate
+Gold answer: Chỉ số tính các đơn bị trả do lỗi liên quan đến người bán như vấn đề chất lượng đã xác minh, hàng lỗi/hư hỏng, kiện rỗng, sai hoặc thiếu hàng, thất lạc. Không tính yêu cầu do người mua hủy, người mua không gửi lại hàng đúng hạn, người bán thắng phân xử hoặc trả hàng vì đổi ý.
+  1. score=0.347998 doc_id=tiktok-after-sale-dispute chunk_id=tiktok-after-sale-dispute#10
+     # Giải quyết tranh chấp sau bán hàng TikTok Shop Nếu không đồng tình với kết quả, Khách hàng có thể đưa ra một Tranh chấp sau bán hàng khác. Khách hàng có thể gửi tối đa 2 Tranh ch
+  2. score=0.274829 doc_id=shopee-return-refund-policy chunk_id=shopee-return-refund-policy#0
+     # Chính sách trả hàng và hoàn tiền Shopee CHÍNH SÁCH TRẢ HÀNG VÀ HOÀN TIỀN | Shopee Trung tâm trợ giúp Xin chào, Shopee có thể giúp gì cho bạn? CHÍNH SÁCH TRẢ HÀNG VÀ HOÀN TIỀN 1. 
+  3. score=0.271382 doc_id=tiktok-return-refund-policy chunk_id=tiktok-return-refund-policy#7
+     # Chính sách hủy đơn trả hàng hoàn tiền TikTok Shop Phần này giải thích cách xử lý yêu cầu trả hàng và hoàn tiền, những quy định đặc biệt được áp dụng, các chỉ số của người bán có 
+Gold doc in top-3: NO
+All answer markers in top-3: NO
+
+Q5: Trong tranh chấp sau bán hàng TikTok Shop, người bán có bao lâu để gửi tài liệu, nền tảng có bao lâu để ra quyết định và hai bên có bao lâu để phản đối?
+Filter: None
+Gold doc: tiktok-after-sale-dispute
+Gold answer: Khi được yêu cầu, người bán phải gửi tài liệu trong 24 giờ. Nền tảng ra quyết định trong 72 giờ sau khi nhận đủ tài liệu; yêu cầu phản đối phải gửi trong 48 giờ sau khi hai bên được thông báo.
+  1. score=0.293027 doc_id=shopee-return-refund-policy chunk_id=shopee-return-refund-policy#9
+     # Chính sách trả hàng và hoàn tiền Shopee iii. Trong trường hợp giới hạn hạn mức này được áp dụng, Người Mua vẫn có thể thực hiện yêu cầu Trả hàng COM từ tài khoản Shopee của Người
+  2. score=0.248782 doc_id=tiktok-after-sale-dispute chunk_id=tiktok-after-sale-dispute#6
+     # Giải quyết tranh chấp sau bán hàng TikTok Shop Nền tảng này sẽ xem xét tất cả tài liệu đã gửi. Tỏng trường hợp cần thiết, Nền tảng cũng có thể xem xét thông tin của bên thứ ba có
+  3. score=0.238597 doc_id=tiktok-after-sale-dispute chunk_id=tiktok-after-sale-dispute#0
+     # Giải quyết tranh chấp sau bán hàng TikTok Shop Nguyên tắc xử lý Khiếu nại sau bán hàng của TikTok Shop Nguyên tắc xử lý Khiếu nại sau bán hàng của TikTok Shop 08/08/2025 Áp dụng 
+Gold doc in top-3: YES
+All answer markers in top-3: NO
+
+=== A/B metadata filter for the audience-ambiguous query ===
+Query: Tôi có thể hủy đơn vào lúc nào và việc hủy đơn có hậu quả gì?
+A — no filter:
+  1. score=0.223770 doc_id=tiktok-return-refund-policy chunk_id=tiktok-return-refund-policy#0
+     # Chính sách hủy đơn trả hàng hoàn tiền TikTok Shop Chính sách hủy đơn hàng, trả hàng và hoàn tiền của khách hàng trên TikTok Shop Chính sách hủy đơn hàng, trả hàng và hoàn tiền củ
+  2. score=0.217644 doc_id=shopee-return-refund-policy chunk_id=shopee-return-refund-policy#29
+     # Chính sách trả hàng và hoàn tiền Shopee 11.2. Nếu một bên khiếu nại bên kia tới các Cơ quan chức năng, bên khiếu nại cần thông báo kịp thời với Shopee về vụ việc tranh chấp này k
+  3. score=0.216317 doc_id=shopee-return-refund-policy chunk_id=shopee-return-refund-policy#22
+     # Chính sách trả hàng và hoàn tiền Shopee Theo hình thức “Tự sắp xếp”: Người Mua cần thanh toán trước chi phí vận chuyển cho việc trả hàng. Shopee sẽ hỗ trợ hoàn lại một phần chi p
+Answer markers present: NO
+B — metadata_filter={'audience': 'buyer'}:
+  1. score=0.099288 doc_id=shopee-buyer-return-request chunk_id=shopee-buyer-return-request#0
+     # Hướng dẫn người mua gửi yêu cầu trả hàng [Trả hàng/ Hoàn tiền] Hướng dẫn gửi yêu cầu Trả hàng/ Hoàn tiền | Shopee Trung tâm trợ giúp Xin chào, Shopee có thể giúp gì cho bạn? [Tr
+  2. score=0.076780 doc_id=tiktok-buyer-order-cancellation chunk_id=tiktok-buyer-order-cancellation#0
+     # Quy định hủy đơn dành cho người mua TikTok Shop ## Điều kiện hủy đơn Khách hàng có thể hủy đơn hàng tùy theo trạng thái đơn hàng. Điều này không gây ra hậu quả nào cho người bán,
+  3. score=0.061619 doc_id=shopee-buyer-refund-time chunk_id=shopee-buyer-refund-time#0
+     # Thời gian nhận tiền hoàn Shopee [Trả hàng/ Hoàn tiền] Thời gian nhận tiền hoàn và cách kiểm tra tiền hoàn | Shopee Trung tâm trợ giúp Xin chào, Shopee có thể giúp gì cho bạn? [Tr
+Answer markers present: YES

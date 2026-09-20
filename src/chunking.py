@@ -97,11 +97,12 @@ class RecursiveChunker:
 
     def _split(self, current_text: str, remaining_separators: list[str]) -> list[str]:
         if not remaining_separators:
-            # No more separators, return the text as a single chunk
-            return [current_text]
+            return [
+                current_text[i:i + self.chunk_size]
+                for i in range(0, len(current_text), self.chunk_size)
+            ]
 
         separator = remaining_separators[0]
-        chunks: list[str] = []
 
         if separator == "":
             return [
@@ -109,21 +110,126 @@ class RecursiveChunker:
                 for i in range(0, len(current_text), self.chunk_size)
             ]
 
-        # Split the current text using the current separator
         parts = current_text.split(separator)
+        split_parts: list[str] = []
 
         for part in parts:
             part = part.strip()
             if not part:
                 continue
             if len(part) <= self.chunk_size:
-                chunks.append(part)
+                split_parts.append(part)
             else:
-                # Recursively split the part using the next separator
-                sub_chunks = self._split(part, remaining_separators[1:])
-                chunks.extend(sub_chunks)
+                split_parts.extend(
+                    self._split(part, remaining_separators[1:])
+                )
+
+        # Merge adjacent small pieces back together so short lines or
+        # paragraphs do not become tiny standalone chunks.
+        chunks: list[str] = []
+        current_chunk = ""
+
+        for part in split_parts:
+            candidate = (
+                f"{current_chunk}{separator}{part}"
+                if current_chunk
+                else part
+            )
+            if len(candidate) <= self.chunk_size:
+                current_chunk = candidate
+                continue
+
+            if current_chunk:
+                chunks.append(current_chunk)
+            current_chunk = part
+
+        if current_chunk:
+            chunks.append(current_chunk)
 
         return chunks
+
+
+class HeadingChunker:
+    """Split Markdown by headings, then recursively split long sections.
+
+    A heading is repeated on every child chunk so an oversized section keeps
+    its subject and hierarchy after it has been split.
+    """
+
+    HEADING_LINE_PATTERN = re.compile(
+        r"(?m)^(#{1,6})[ \t]+([^\n]+?)[ \t]*$"
+    )
+
+    def __init__(self, chunk_size: int = 800) -> None:
+        if chunk_size <= 0:
+            raise ValueError("chunk_size must be greater than zero")
+        self.chunk_size = chunk_size
+
+    def chunk(self, text: str) -> list[str]:
+        if not text or not text.strip():
+            return []
+
+        matches = list(self.HEADING_LINE_PATTERN.finditer(text))
+        if not matches:
+            return RecursiveChunker(chunk_size=self.chunk_size).chunk(text.strip())
+
+        chunks: list[str] = []
+        preamble = text[:matches[0].start()].strip()
+        if preamble:
+            chunks.extend(
+                RecursiveChunker(chunk_size=self.chunk_size).chunk(preamble)
+            )
+
+        heading_stack: dict[int, str] = {}
+        for index, match in enumerate(matches):
+            level = len(match.group(1))
+            heading = match.group(0).strip()
+            body_end = (
+                matches[index + 1].start()
+                if index + 1 < len(matches)
+                else len(text)
+            )
+            body = text[match.end():body_end].strip()
+
+            heading_stack = {
+                stored_level: stored_heading
+                for stored_level, stored_heading in heading_stack.items()
+                if stored_level < level
+            }
+            heading_stack[level] = heading
+            heading_context = "\n".join(
+                heading_stack[stored_level]
+                for stored_level in sorted(heading_stack)
+            )
+
+            # A title-only parent heading provides context to its child
+            # sections, but is not useful as a standalone retrieval chunk.
+            if not body:
+                next_level = (
+                    len(matches[index + 1].group(1))
+                    if index + 1 < len(matches)
+                    else None
+                )
+                if next_level is None or next_level <= level:
+                    chunks.append(heading_context)
+                continue
+
+            chunks.extend(self._chunk_section(heading_context, body))
+        return chunks
+
+    def _chunk_section(self, heading: str, body: str) -> list[str]:
+        section = f"{heading}\n\n{body}"
+        if len(section) <= self.chunk_size:
+            return [section]
+
+        available_size = self.chunk_size - len(heading) - 2
+        if available_size <= 0:
+            raise ValueError(
+                "chunk_size must be larger than the section heading"
+            )
+
+        body_chunks = RecursiveChunker(chunk_size=available_size).chunk(body)
+        return [f"{heading}\n\n{chunk}" for chunk in body_chunks]
 
 
 def _dot(a: list[float], b: list[float]) -> float:
